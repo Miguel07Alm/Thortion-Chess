@@ -464,6 +464,8 @@ class Stages:
         phrase = ""
         text_range = [0] # The start range of the texts
         
+        enemy_uncertainty_stuff = []
+        
         while True:
             blit(self.win, self.board, (0,0))
             clock.tick(60)
@@ -660,12 +662,13 @@ class Stages:
             
                     if len(pieces_selected) > 1:
                         checkPieces = check(all_pieces, self.positions,white_piece, self.coords_ingame)
-                        
                         if len(checkPieces) > 0: 
                             white_piece.check = True
                         else:
                             white_piece.check = False
                         uncertainty_stuff = is_possible_checkmate(all_pieces, checkPieces, self.positions, self.coords_ingame, white_piece)
+                        
+                        
                         if uncertainty_stuff != None:
                             if len(uncertainty_stuff[1]) > 0: 
                                 defense_pieces[0] = set(arr[i] for arr in uncertainty_stuff[1] for i in range(len(arr)))
@@ -674,7 +677,7 @@ class Stages:
                             defense_pieces[0].clear()
                             defense_coords[0].clear()
                         
-                        checkmate(white_piece, all_pieces,uncertainty_stuff, self.coords_ingame, self.positions, checkPieces, self.win, team, self.font)
+                        checkmate(white_piece, all_pieces,uncertainty_stuff, self.coords_ingame, self.positions, checkPieces, self.win, "white", self.font)
                 if white_piece.ready_to_move:
                     white_piece.square_contour(self.win,defense_coords[0], self.positions)
                     white_piece.contour_selected()
@@ -724,27 +727,6 @@ class Stages:
                     pa(self.white_pieces, self.black_pieces, otherNamePieces, team, Piece, self.positions)
                 
                 
-                if black_piece.name == "king":
-                    
-                    if len(pieces_selected) > 1:
-                        checkPieces = check(all_pieces, self.positions,black_piece, self.coords_ingame)
-                        if len(checkPieces) > 0: 
-                            black_piece.check = True
-
-                        else:
-                            black_piece.check = False
-                        
-                        uncertainty_stuff = is_possible_checkmate(all_pieces, checkPieces, self.positions,self.coords_ingame, black_piece)
-                        if uncertainty_stuff != None:
-                            if len(uncertainty_stuff[1]) > 0:
-                                defense_pieces[1] = set(arr[i] for arr in uncertainty_stuff[1] for i in range(len(arr)))
-                                defense_coords[1] = set(arr[i] for arr in uncertainty_stuff[2] for i in range(len(arr)))
-                        
-                        else:
-                            defense_pieces[1].clear()
-                            defense_coords[1].clear()
-                        
-                        checkmate(black_piece, all_pieces,uncertainty_stuff, self.coords_ingame, self.positions, checkPieces, self.win, team, self.font)
                 if black_piece.ready_to_move:
                     black_piece.square_contour(self.win,defense_coords[1], self.positions)
                     black_piece.contour_selected()
@@ -773,6 +755,26 @@ class Stages:
                 
             if times[idx_team - 1] >= self.time_chose:
                 ending_frame(self.win, team,teams[teams.index(team) - 1],self.font,2)
+            
+            if len(pieces_selected) > 1:
+                checkPieces = check(all_pieces, self.positions,black_piece, self.coords_ingame)
+                if len(checkPieces) > 0: 
+                    black_piece.check = True
+
+                else:
+                    black_piece.check = False
+                
+                uncertainty_stuff = is_possible_checkmate(all_pieces, checkPieces, self.positions,self.coords_ingame, black_piece)
+                if uncertainty_stuff != None:
+                    if len(uncertainty_stuff[1]) > 0:
+                        defense_pieces[1] = set(arr[i] for arr in uncertainty_stuff[1] for i in range(len(arr)))
+                        defense_coords[1] = set(arr[i] for arr in uncertainty_stuff[2] for i in range(len(arr)))
+                
+                else:
+                    defense_pieces[1].clear()
+                    defense_coords[1].clear()
+                
+                checkmate(black_piece, all_pieces,uncertainty_stuff, self.coords_ingame, self.positions, checkPieces, self.win, "black", self.font)
             
             
             for dp in deleted_pieces:

@@ -86,7 +86,7 @@ def ending_frame(win, team, otherTeam, font, kind):
     font.rendered_text(texts[kind], win, (x - font.text_len(texts[kind]) * 0.8 ,y))
     
     font.n_times = 2
-    if time.time() - total_t >= 2:
+    if time.time() - total_t >= 5:
         time.sleep(2) 
         sys.exit()
         
@@ -293,8 +293,10 @@ def checkmate(king ,all_pieces, check, coords_ingame, positions, warning_pieces,
                                      
         king.n_movements = king.king_movements(all_pieces, warning_pieces,coords_ingame, positions) 
         otherTeam = "white" if team == "black" else "black"
+        enemy_king = get_piece(all_pieces, otherTeam, "king")
         #kinds: 0 -> checkmate, 1 -> king suffocated, 2 -> Time consumed, 3 -> not enough material
         if check != None:
+            #if enemy_king.n_movements == 0 and check[0]:
             if king.n_movements == 0 and check[0]:
                 print("CHECKMATE")
                 winnerTeam = "white" if king.team == "black" else "black"
