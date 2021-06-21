@@ -86,8 +86,6 @@ def ending_frame(win, team, otherTeam, font, kind):
     font.rendered_text(texts[kind], win, (x - font.text_len(texts[kind]) * 0.8 ,y))
     
     font.n_times = 2
-    t = f"{round(2 - (time.time() - total_t), 2)} seconds for exiting..."
-    font.rendered_text(t, win, (x - font.text_len(t) * 0.8 , 640))
     if time.time() - total_t >= 2:
         time.sleep(2) 
         sys.exit()
