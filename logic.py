@@ -48,8 +48,6 @@ class Piece:
         self.rival_piece = None
         self.ready_to_move = False
         self.last_coord = coord
-        self.is_moved = False
-        self.last_movement = self.last_coord
         self.all_movements_coords = []
         self.letters = "abcdefgh"
         
@@ -124,12 +122,6 @@ class Piece:
         else: self.img = swap_color(self.img, self.c, realKingColor)
         
     def blit_piece(self, win, points = None,positions = None,pieces = None, turns = None, team = None):
-        if self.is_moved:
-            rx,ry = positions[self.last_movement]
-            c3 = self.contour2y.copy()
-            c3 = swap_color(c3, "#d4e02d",c3.get_at((0,0)))
-            c3.set_alpha(175)
-            win.blit(c3, (rx - 2, ry + 1))
         if self.name == "pawn":
             target_coord = self.last_coord[0] + "1" if self.team == "black" else  self.last_coord[0] + "8"
             # --Algorithm for the pawn skill--
@@ -160,12 +152,11 @@ class Piece:
                 
         else: win.blit(self.img, self.r)
     
-    def new_coord(self, new_coord,coord_choice,coords_ingame):
+    def new_coord(self, new_coord,coord_choice,coords_ingame, last_positions = None):
         self.r = new_coord
-        self.is_moved = True
-        self.last_movement = self.last_coord
+        if last_positions != None: last_positions.append(self.last_coord)
         if self.last_coord in coords_ingame: del coords_ingame[coords_ingame.index(self.last_coord)]
-        if coord_choice[0] != self.last_coord: self.n_movements_ingame += 1
+        self.n_movements_ingame += 1
         self.last_coord = coord_choice[0]
         coords_ingame.append(self.last_coord)
         self.all_movements_coords.append(self.last_coord)
@@ -976,7 +967,7 @@ class Piece:
     def get_attributes(self):
         return self.__dict__
 
-    def movement_system(self, positions, mouse_position, coords_ingame, all_pieces, rival_team, turn, possible_pieces_movement,possible_coords, our_king, deleted_pieces, points, used_coords, net = None, times = None, name_pieces = None,chatData = None):
+    def movement_system(self, positions, mouse_position, coords_ingame, all_pieces, rival_team, turn, possible_pieces_movement,possible_coords, our_king, deleted_pieces, points, used_coords, net = None, times = None, name_pieces = None,chatData = None, last_positions = None):
         # The algorithm for making the movements of all pieces
         points_ranked = {"pawn": 1, "rook": 5, "knight": 3, "bishop": 3, "queen": 9} # based in pawns
         deleted_pieces_coords = [deleted_piece.initial_coord for deleted_piece in deleted_pieces if deleted_piece != None]
@@ -1023,12 +1014,12 @@ class Piece:
                 if coord_choice[0] not in coords_ingame:
                     if abs(int(coord_choice[0][1]) - int(self.last_coord[1])) == 2  and self.last_coord[1] == self.initial_coord[1] and coord_choice[0][0] == self.last_coord[0]: 
                         if self.last_coord[0] + str(int(self.last_coord[1]) + n) not in coords_ingame:
-                            self.new_coord(coord, coord_choice, coords_ingame)
+                            self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                             used_coords.append(self.last_coord)
                             turn.append(next_turn)
                             if net != None: net.send(make_info(turn, times, used_coords,deleted_pieces_coords,points[indx_team],name_pieces,chatData[self.team],[self.name, self.initial_coord, self.last_coord]))
                     elif self.conditions[0] and coord_choice[0][0] == self.last_coord[0]: 
-                        self.new_coord(coord, coord_choice, coords_ingame)
+                        self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                         used_coords.append(self.last_coord)
                         turn.append(next_turn)
                         if net != None: net.send(make_info(turn, times, used_coords,deleted_pieces_coords,points[indx_team],name_pieces,chatData[self.team],[self.name, self.initial_coord, self.last_coord]))
@@ -1036,7 +1027,7 @@ class Piece:
                     if self.last_coord[0] not in ["a", "h"]:
                         if coord_choice[0][0] in [self.letters[self.letters.index(self.last_coord[0]) - 1],self.letters[self.letters.index(self.last_coord[0]) + 1]] and self.conditions[0]:
                             turn.append(next_turn)
-                            self.new_coord(coord, coord_choice, coords_ingame)
+                            self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                             
                             deleted_pieces.append(self.rival_piece)
                             points[indx_team] += points_ranked[self.rival_piece.name]
@@ -1047,7 +1038,7 @@ class Piece:
                     else:
                         if self.last_coord[0] == "a":
                             if coord_choice[0][0] == "b" and self.conditions[0]:
-                                self.new_coord(coord, coord_choice, coords_ingame)
+                                self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                                 deleted_pieces.append(self.rival_piece)
                                 
                                 points[indx_team] += points_ranked[self.rival_piece.name]
@@ -1058,7 +1049,7 @@ class Piece:
                                 if net != None: net.send(make_info(turn, times, used_coords,deleted_pieces_coords,points[indx_team],name_pieces,chatData[self.team],[self.name, self.initial_coord, self.last_coord]))
                         else:
                             if coord_choice[0][0] in "g" and self.conditions[0]:
-                                self.new_coord(coord, coord_choice, coords_ingame)
+                                self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                                 deleted_pieces.append(self.rival_piece)
                                 
                                 points[indx_team] += points_ranked[self.rival_piece.name]
@@ -1071,13 +1062,13 @@ class Piece:
             elif self.name == "rook":
                 condition = self.rook_condition(coord_choice[0], coords_ingame)
                 if condition and coord_choice[0] not in coords_ingame:
-                    self.new_coord(coord, coord_choice, coords_ingame)
+                    self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                     
                     turn.append(next_turn)
                     used_coords.append(self.last_coord)
                     if net != None: net.send(make_info(turn, times, used_coords,deleted_pieces_coords,points[indx_team],name_pieces,chatData[self.team],[self.name, self.initial_coord, self.last_coord]))
                 if condition and self.attack:
-                    self.new_coord(coord, coord_choice, coords_ingame)
+                    self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                     turn.append(next_turn)
                     points[indx_team] += points_ranked[self.rival_piece.name]
                     used_coords.append(attack_coord)
@@ -1090,13 +1081,13 @@ class Piece:
             elif self.name == "knight":
                 condition = self.knight_condition(coord_choice[0], coords_ingame)
                 if condition:
-                    self.new_coord(coord, coord_choice, coords_ingame)
+                    self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                     used_coords.append(self.last_coord)
                     turn.append(next_turn)
                     if net != None: net.send(make_info(turn, times, used_coords,deleted_pieces_coords,points[indx_team],name_pieces,chatData[self.team],[self.name, self.initial_coord, self.last_coord]))
                     
                 if self.attack and (abs(int(coord_choice[0][1]) - int(self.last_coord[1])) == 2 and abs(self.letters.index(self.last_coord[0]) - self.letters.index(coord_choice[0][0])) == 1 and self.last_coord[0] != coord_choice[0][0] or abs(int(coord_choice[0][1]) - int(self.last_coord[1])) == 1 and abs(self.letters.index(self.last_coord[0]) - self.letters.index(coord_choice[0][0])) == 2 and self.last_coord[0] != coord[0]):
-                    self.new_coord(coord, coord_choice, coords_ingame)
+                    self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                     deleted_pieces.append(self.rival_piece)
                     points[indx_team] += points_ranked[self.rival_piece.name]
                     
@@ -1111,13 +1102,13 @@ class Piece:
                 condition = self.bishop_condition(coord_choice[0], coords_ingame)
                 attack_condition = self.bishop_condition(coord_choice[0], coords_ingame,coord_choice[0])
                 if positions[coord_choice[0]] in self.ideal_coords and coord_choice[0] not in coords_ingame and condition:
-                    self.new_coord(coord, coord_choice, coords_ingame)
+                    self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                     turn.append(next_turn)
                     used_coords.append(self.last_coord)
                     if net != None: net.send(make_info(turn, times, used_coords,deleted_pieces_coords,points[indx_team],name_pieces,chatData[self.team],[self.name, self.initial_coord, self.last_coord]))
                     
                 if self.attack and positions[coord_choice[0]] in self.rival_coords and attack_condition:
-                    self.new_coord(coord, coord_choice, coords_ingame)
+                    self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                     deleted_pieces.append(self.rival_piece)
                     points[indx_team] += points_ranked[self.rival_piece.name]
                     used_coords.append(attack_coord)
@@ -1132,19 +1123,19 @@ class Piece:
                 condition_bishop = self.bishop_condition(coord_choice[0], coords_ingame)
                 attack_condition_bishop = self.bishop_condition(coord_choice[0], coords_ingame,coord_choice[0])
                 if condition_rook and coord_choice[0] not in coords_ingame:
-                    self.new_coord(coord, coord_choice, coords_ingame)
+                    self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                     turn.append(next_turn)
                     used_coords.append(self.last_coord)
                     if net != None: net.send(make_info(turn, times, used_coords,deleted_pieces_coords,points[indx_team],name_pieces,chatData[self.team],[self.name, self.initial_coord, self.last_coord]))
                     
                 elif positions[coord_choice[0]] in self.special_ideal_coords[1] and coord_choice[0] not in coords_ingame and condition_bishop:
-                    self.new_coord(coord, coord_choice, coords_ingame)
+                    self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                     turn.append(next_turn)
                     used_coords.append(self.last_coord)
                     if net != None: net.send(make_info(turn, times, used_coords,deleted_pieces_coords,points[indx_team],name_pieces,chatData[self.team],[self.name, self.initial_coord, self.last_coord]))
                     
                 if condition_rook and self.attack:
-                    self.new_coord(coord, coord_choice, coords_ingame)
+                    self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                     turn.append(next_turn)
                     deleted_pieces.append(self.rival_piece)
                     points[indx_team] += points_ranked[self.rival_piece.name]
@@ -1155,7 +1146,7 @@ class Piece:
                     
                 
                 elif self.attack and positions[coord_choice[0]] in self.rival_coords and attack_condition_bishop:
-                    self.new_coord(coord, coord_choice, coords_ingame)
+                    self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                     turn.append(next_turn)
                     deleted_pieces.append(self.rival_piece)
                     points[indx_team] += points_ranked[self.rival_piece.name]
@@ -1170,14 +1161,14 @@ class Piece:
                     conditions_king = self.king_condition(coord_choice[0], coords_ingame)
                     # Poner filtro en checkmate para pasar las coordenadas que cumplan las condiciones de las piezas para atacar
                     if all(conditions_king) and positions[coord_choice[0]] not in self.all_ideal_coords and positions[coord_choice[0]] in self.ideal_coords:
-                        self.new_coord(coord, coord_choice, coords_ingame)
+                        self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                         turn.append(next_turn)
                         used_coords.append(self.last_coord)
                         if net != None: net.send(make_info(turn, times, used_coords,deleted_pieces_coords,points[indx_team],name_pieces,chatData[self.team],[self.name, self.initial_coord, self.last_coord]))
                         
                     if self.attack and conditions_king[0] and positions[coord_choice[0]] not in self.all_ideal_coords and positions[coord_choice[0]] in self.rival_coords:
                         if self.king_attack_algorithm(all_pieces, coords_ingame, coord_choice[0], positions):
-                            self.new_coord(coord, coord_choice, coords_ingame)
+                            self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                             deleted_pieces.append(self.rival_piece)
                             points[indx_team] += points_ranked[self.rival_piece.name]
                             used_coords.append(attack_coord)
@@ -1216,7 +1207,7 @@ class Piece:
                 
                 if self.initial_coord in possible_pieces_movement[indx_team]:
                     if self.attack and self.king_attack_algorithm(all_pieces, coords_ingame, coord_choice[0], positions):
-                        self.new_coord(coord, coord_choice, coords_ingame)
+                        self.new_coord(coord, coord_choice, coords_ingame,last_positions)
                         deleted_pieces.append(self.rival_piece)
                         points[indx_team] += points_ranked[self.rival_piece.name]
                         used_coords.append(attack_coord)
@@ -1232,6 +1223,8 @@ class Piece:
         self.conditions.clear()
         if self.name == "pawn":
             self.attack_positions.clear()  
+            
+        # DO A LIST THAT INCLUDES ALL THE COORDS OF THE PIECES MOVED 
         for piece in all_pieces:
             if piece.name == "bishop":
                 piece.special_conditions.clear()

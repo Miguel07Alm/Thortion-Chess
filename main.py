@@ -1,6 +1,6 @@
 import pygame, glob, time
 import string
-from functions import get_pieces, get_positions, check, checkmate, is_possible_checkmate, get_piece, functional_system_of_pieces as fsop, Font, coord_system as cs, time_system as ts, Vector2,looking_for_diff_pieces as lfdp, get_piece_directly as gpd, pawn_algorithm as pa,swap_color, blit, chat_system, waiting
+from functions import get_pieces, get_positions, check, checkmate, is_possible_checkmate, get_piece, functional_system_of_pieces as fsop, Font, coord_system as cs, time_system as ts, Vector2,looking_for_diff_pieces as lfdp, get_piece_directly as gpd, pawn_algorithm as pa,swap_color, blit, chat_system, waiting, last_movement_algorithm as lma
 from logic import *
 from network import *
 import sys
@@ -29,7 +29,7 @@ class Stages:
         self.pause_img = pygame.image.load("pause.png").convert_alpha()
         self.pause_img.set_colorkey([0] * 3)
         self.chatIcon = pygame.image.load("chatIcon.png").convert_alpha()
-        self.chatIcon.set_colorkey(pygame.Color("#ff0000"))
+        #self.chatIcon.set_colorkey(pygame.Color("#ff0000"))
         self.littleLabel = pygame.image.load("littleLabel.png")
         self.littleLabel.set_colorkey([0] * 3)
         self.info = 0
@@ -42,8 +42,10 @@ class Stages:
         self.chatData = {"white": [],"black": []} # The max length of the word is 10
         self.net = None
         self.activity = False
+        self.last_positions = []
         self.modes = ["mainMenu", "offline", "online"]
         self.mode = self.modes[0]
+        
         
     def setup(self):
         # The initialization of the chess
@@ -71,7 +73,8 @@ class Stages:
             self.coords_ingame.append(letters[n] + "2")
             self.coords_ingame.append(letters[n] + "7")
             self.black_pieces.append(Piece("pawn",letters[n] + "7", self.positions[letters[n] + "7"],self.pieces["pawn"], "black", self.pieces))
-            
+        
+        self.last_positions.clear()
         
     def choose_option(self):
         self.setup()
@@ -142,7 +145,7 @@ class Stages:
                 x += 120
             
             
-            self.font.rendered_text("Version 1.0", self.win, (700 - 85, 0))
+            self.font.rendered_text("Version 1.1", self.win, (700 - 85, 0))
             self.font.n_times = 2
             pygame.display.update()
     def loading_frame(self):
@@ -196,6 +199,7 @@ class Stages:
         defense_coords = [set(), set()] # White, Black
         times = [0, 0] # White, Black in seconds
         last_t = 0 
+        
         
         
         
@@ -284,8 +288,8 @@ class Stages:
                                 if piece_selected.ready_to_move:
                                     king = get_piece(all_pieces, piece_selected.team,"king")
                                     if piece_selected.name == "pawn":
-                                        if not piece_selected.pawn_skill: piece_selected.movement_system(self.positions, m, self.coords_ingame, all_pieces, rival_team, turns,defense_pieces, defense_coords,king, deleted_pieces, points, used_coords)
-                                    else: piece_selected.movement_system(self.positions, m, self.coords_ingame, all_pieces, rival_team, turns,defense_pieces, defense_coords,king, deleted_pieces, points, used_coords)
+                                        if not piece_selected.pawn_skill: piece_selected.movement_system(self.positions, m, self.coords_ingame, all_pieces, rival_team, turns,defense_pieces, defense_coords,king, deleted_pieces, points, used_coords,last_positions = self.last_positions)
+                                    else: piece_selected.movement_system(self.positions, m, self.coords_ingame, all_pieces, rival_team, turns,defense_pieces, defense_coords,king, deleted_pieces, points, used_coords,last_positions = self.last_positions)
                                     piece_selected.ready_to_move = False
                                 piece_selected = None
                     
@@ -408,6 +412,8 @@ class Stages:
                     
                 else:
                     black_piece.blit_piece(self.win,positions = self.positions)
+            
+            lma(self.win, self.last_positions, self.positions)
             if times[0] >= self.time_chose:
                 
                 ending_frame(self.win, "white", "black",self.font,2)
@@ -441,7 +447,7 @@ class Stages:
         mouseWheelEvent = 0 # The events condition for the mouse wheel
         mouseWheelChatEvent = MWCE = 0
         min_rounds = [1] # White team, Black team
-
+        writing = False
 
         all_pieces = set()
         rival_team = None
@@ -537,19 +543,16 @@ class Stages:
                     self.chatIcon = swap_color(self.chatIcon,"#13908c" ,self.chatIcon.get_at((33,12)))
                 if event.type == pygame.KEYDOWN and self.chat:
                     letter = pygame.key.name(event.key)
+                    writing = True
                     if letter in string.ascii_letters + "1234567890" and len(phrase) < 10: phrase += letter
                     elif letter == "backspace": phrase = phrase[:-1]
                     elif letter == "space": phrase += " "
                     if letter == "return" and len(phrase) > 0:
-                        print(len(textdata), text_range[0])
-                        print(len(range(text_range[0], len(textdata))))
                         if len(range(text_range[0], len(textdata))) >= 23: text_range[0] += 1
                         self.chatData[team].append((phrase, time.time()))
                         phrase = ""
-                
-                    
-                
-                        
+                else:
+                    writing = False
                 #-----------------------
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
@@ -583,8 +586,8 @@ class Stages:
                             if piece_selected.ready_to_move:
                                 king = get_piece(all_pieces, piece_selected.team,"king")
                                 if piece_selected.name == "pawn":
-                                    if not piece_selected.pawn_skill: piece_selected.movement_system(self.positions, m, self.coords_ingame, all_pieces, rival_team, turns,defense_pieces, defense_coords,king, deleted_pieces, points, used_coords, self.net, times, name_pieces,self.chatData)
-                                else: piece_selected.movement_system(self.positions, m, self.coords_ingame, all_pieces, rival_team, turns,defense_pieces, defense_coords,king, deleted_pieces, points, used_coords, self.net, times, name_pieces, self.chatData)
+                                    if not piece_selected.pawn_skill: piece_selected.movement_system(self.positions, m, self.coords_ingame, all_pieces, rival_team, turns,defense_pieces, defense_coords,king, deleted_pieces, points, used_coords, self.net, times, name_pieces,self.chatData, self.last_positions)
+                                else: piece_selected.movement_system(self.positions, m, self.coords_ingame, all_pieces, rival_team, turns,defense_pieces, defense_coords,king, deleted_pieces, points, used_coords, self.net, times, name_pieces, self.chatData,self.last_positions)
                                 piece_selected.ready_to_move = False
                             piece_selected = None
                 
@@ -630,7 +633,7 @@ class Stages:
             if self.chat: 
                 pos_phrase = (self.font.lettersImgs["a"].get_size()[1] + 3,  100 + (self.frameChat.get_size()[1] - self.chatIcon.get_size()[1]) + self.chatIcon.get_size()[1]//2 - self.font.lettersImgs["A"].get_size()[1] + 2)
                 self.font.rendered_text(phrase, self.win, pos_phrase)
-                if len(phrase) < 10: waiting(self.win, self.font, pos_phrase, self.font.lettersImgs["a"].get_size()[0] * len(phrase) * self.font.n_times + len(phrase)*2 )
+                if len(phrase) < 10: waiting(self.win, self.font, pos_phrase, self.font.lettersImgs["a"].get_size()[0] * len(phrase) * self.font.n_times + len(phrase)*2, writing)
             if not self.chat:self.font.rendered_text("Chat", self.win, (self.chatIcon.get_size()[0]//2 - self.font.width("Chat"),  100 + (self.frameChat.get_size()[1] - self.chatIcon.get_size()[1]) + self.chatIcon.get_size()[1]//2 - self.font.lettersImgs["A"].get_size()[1] + 2) )
             #-----------
             
@@ -655,7 +658,7 @@ class Stages:
                     points[idx_team - 1] = otherTeamData[5]
                     otherNamePieces = otherTeamData[6]
                     self.chatData[teams[teams.index(team) - 1]] = otherTeamData[7]
-                    lfdp(set(self.white_pieces).union(set(self.black_pieces)),otherTeamData[-1][1], otherTeamData[-1][2], self.positions, self.coords_ingame)
+                    lfdp(set(self.white_pieces).union(set(self.black_pieces)),otherTeamData[-1][1], otherTeamData[-1][2], self.positions, self.coords_ingame, self.last_positions)
                     pa(self.white_pieces, self.black_pieces, otherNamePieces, team, Piece, self.positions)
                     
                 if white_piece.name == "king":
@@ -723,10 +726,28 @@ class Stages:
                     
                     
                     
-                    lfdp(set(self.white_pieces).union(set(self.black_pieces)),otherTeamData[-1][1], otherTeamData[-1][2], self.positions, self.coords_ingame)
+                    lfdp(set(self.white_pieces).union(set(self.black_pieces)),otherTeamData[-1][1], otherTeamData[-1][2], self.positions, self.coords_ingame, self.last_positions)
                     pa(self.white_pieces, self.black_pieces, otherNamePieces, team, Piece, self.positions)
-                
-                
+                if black_piece.name == "king":
+                    if len(pieces_selected) > 1:
+                        checkPieces = check(all_pieces, self.positions,black_piece, self.coords_ingame)
+                        if len(checkPieces) > 0: 
+                            black_piece.check = True
+
+                        else:
+                            black_piece.check = False
+                        
+                        uncertainty_stuff = is_possible_checkmate(all_pieces, checkPieces, self.positions,self.coords_ingame, black_piece)
+                        if uncertainty_stuff != None:
+                            if len(uncertainty_stuff[1]) > 0:
+                                defense_pieces[1] = set(arr[i] for arr in uncertainty_stuff[1] for i in range(len(arr)))
+                                defense_coords[1] = set(arr[i] for arr in uncertainty_stuff[2] for i in range(len(arr)))
+                        
+                        else:
+                            defense_pieces[1].clear()
+                            defense_coords[1].clear()
+                        
+                        checkmate(black_piece, all_pieces,uncertainty_stuff, self.coords_ingame, self.positions, checkPieces, self.win, "black", self.font)
                 if black_piece.ready_to_move:
                     black_piece.square_contour(self.win,defense_coords[1], self.positions)
                     black_piece.contour_selected()
@@ -750,31 +771,16 @@ class Stages:
                 if p not in all_static_pieces:
                     all_static_pieces.add(p)
                 
+            lma(self.win, self.last_positions, self.positions)
+            
+                
             if times[idx_team] >= self.time_chose:
                 ending_frame(self.win,teams[teams.index(team) - 1],team,self.font,2)
                 
             if times[idx_team - 1] >= self.time_chose:
                 ending_frame(self.win, team,teams[teams.index(team) - 1],self.font,2)
             
-            if len(pieces_selected) > 1:
-                checkPieces = check(all_pieces, self.positions,black_piece, self.coords_ingame)
-                if len(checkPieces) > 0: 
-                    black_piece.check = True
-
-                else:
-                    black_piece.check = False
-                
-                uncertainty_stuff = is_possible_checkmate(all_pieces, checkPieces, self.positions,self.coords_ingame, black_piece)
-                if uncertainty_stuff != None:
-                    if len(uncertainty_stuff[1]) > 0:
-                        defense_pieces[1] = set(arr[i] for arr in uncertainty_stuff[1] for i in range(len(arr)))
-                        defense_coords[1] = set(arr[i] for arr in uncertainty_stuff[2] for i in range(len(arr)))
-                
-                else:
-                    defense_pieces[1].clear()
-                    defense_coords[1].clear()
-                
-                checkmate(black_piece, all_pieces,uncertainty_stuff, self.coords_ingame, self.positions, checkPieces, self.win, "black", self.font)
+            
             
             
             for dp in deleted_pieces:

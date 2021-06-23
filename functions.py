@@ -38,10 +38,12 @@ def make_info(turns, times, used_coords,deleted_pieces,points, name_pieces, chat
     if coord_data == None: return [turns, times, used_coords,deleted_pieces, points, name_pieces, chatData]
     else: return [turns, times, used_coords, deleted_pieces, points, name_pieces, chatData, coord_data]
 
-def looking_for_diff_pieces(all_pieces, initial_coord, last_coord,positions, coords_ingame):
+def looking_for_diff_pieces(all_pieces, initial_coord, last_coord, positions, coords_ingame, last_positions):
     for p in all_pieces:
         if p.initial_coord == initial_coord and p.last_coord != last_coord:
+            last_positions.append(p.last_coord)
             p.new_coord(positions[last_coord], [last_coord], coords_ingame)
+            
 def rgb_to_hex(rgb):
     return "#" + "".join(str(bin.dec_to_hex(x)) if len(str(bin.dec_to_hex(x))) == 2 else "0" + str(bin.dec_to_hex(x)) for idx,x in enumerate(rgb) if idx < 3)
 def hex_to_rgb(hex):
@@ -173,12 +175,16 @@ def chat_system(win, surf, chatData, font, boolChat, text_range, event_condition
             blit(win, s, (x, y + size_s//2))
             font.rendered_text(text, win, (x + size_s + 3, y))
             y += 20
-def waiting(win,font, pos_phrase, width):
+def waiting(win,font, pos_phrase,width, writing):
     global waiting_ticks
     waiting_ticks += 1
     x,y = pos_phrase
-    if waiting_ticks % 17 == 0: font.rendered_text("|", win, (x + width, y))
-    else: font.rendered_text("", win, (x + width, y))
+        
+    if not writing:    
+        if waiting_ticks % 17 == 0: font.rendered_text("|", win, (x + width, y))
+        else: font.rendered_text("", win, (x + width, y))
+    else:
+        font.rendered_text("|", win, (x + width, y))
     
     if waiting_ticks >= 1000: waiting_ticks = 1
 def functional_system_of_pieces(deleted_pieces, win, font, points):
@@ -206,7 +212,13 @@ def functional_system_of_pieces(deleted_pieces, win, font, points):
         else:
             win.blit(img,(xb, y + 550))
             xb += 25
-
+def last_movement_algorithm(win, last_positions,positions):
+    if len(last_positions) > 0:
+        rx,ry = positions[last_positions[-1]]
+        surf = pygame.Surface((61,61)).convert_alpha()
+        surf = swap_color(surf, "#d4e02d",surf.get_at((0,0)))
+        surf.set_alpha(175)
+        win.blit(surf, (rx - 2, ry + 1))
 
 
 def get_pieces(pieces_imgs):
@@ -265,7 +277,6 @@ def check(all_pieces, positions, king, coords_ingame):
     return pieces_doing_check
                     
 def checkmate(king ,all_pieces, check, coords_ingame, positions, warning_pieces, win, team, font):
-    
     for piece in all_pieces:
         if piece.team != king.team and piece.name != "pawn":
             ideal_coords = set(piece.ideal_coords) if piece.name != "queen" else set(piece.special_ideal_coords[0]).union(set(piece.special_ideal_coords[1]))
@@ -296,12 +307,11 @@ def checkmate(king ,all_pieces, check, coords_ingame, positions, warning_pieces,
         enemy_king = get_piece(all_pieces, otherTeam, "king")
         #kinds: 0 -> checkmate, 1 -> king suffocated, 2 -> Time consumed, 3 -> not enough material
         if check != None:
-            #if enemy_king.n_movements == 0 and check[0]:
             if king.n_movements == 0 and check[0]:
                 print("CHECKMATE")
                 winnerTeam = "white" if king.team == "black" else "black"
                 ending_frame(win, winnerTeam,otherTeam, font, 0)
-
+        
         elif king_suffocated(king, all_pieces):
             print("King Suffocated")
             winnerTeam = "white" if king.team == "black" else "black"
@@ -328,7 +338,7 @@ def is_possible_checkmate(all_pieces, warning_pieces,positions, coords_ingame, o
                     for c in ideal_coords:
                         idx_coord = positions_coords.index(c)
                         c = all_coords[idx_coord]
-                        if c in possible_coords and not positions[c] in piece.attack_positions:
+                        if c in possible_coords:
                             lucky_breaks[idx_lucky_breaks][0] += 1
                             if piece.initial_coord not in lucky_breaks[idx_lucky_breaks][1]: lucky_breaks[idx_lucky_breaks][1].append(piece.initial_coord)
                             if c not in lucky_breaks[idx_lucky_breaks][2]: lucky_breaks[idx_lucky_breaks][2].append(c)
@@ -387,7 +397,6 @@ def is_possible_checkmate(all_pieces, warning_pieces,positions, coords_ingame, o
                             if piece.initial_coord not in lucky_breaks[idx_lucky_breaks][1]: lucky_breaks[idx_lucky_breaks][1].append(piece.initial_coord)
                             if warning_piece.last_coord not in lucky_breaks[idx_lucky_breaks][2]: lucky_breaks[idx_lucky_breaks][2].append(warning_piece.last_coord)
                 elif piece.name == "king":
-                    # ERROR EN COMER PIEZAS SI EL REY ESTA EN JAQUE 
                     if piece.king_attack_algorithm(all_pieces, coords_ingame,warning_piece.last_coord,positions) and piece.king_condition(warning_piece.last_coord, coords_ingame)[0]:
                         lucky_breaks[idx_lucky_breaks][0] += 1
                         if piece.initial_coord not in lucky_breaks[idx_lucky_breaks][1]: lucky_breaks[idx_lucky_breaks][1].append(piece.initial_coord)
