@@ -1,7 +1,7 @@
 import pygame, glob, time
 import string
-from functions import get_pieces, get_positions, check, checkmate, is_possible_checkmate, get_piece, functional_system_of_pieces as fsop, Font, coord_system as cs, time_system as ts, Vector2,looking_for_diff_pieces as lfdp, get_piece_directly as gpd, pawn_algorithm as pa,swap_color, blit, chat_system, waiting, last_movement_algorithm as lma
-from logic import *
+from utils.functions import get_pieces, get_positions, check, checkmate, is_possible_checkmate, get_piece, functional_system_of_pieces as fsop, Font, coord_system as cs, time_system as ts, Vector2,looking_for_diff_pieces as lfdp, get_piece_directly as gpd, pawn_algorithm as pa,swap_color, blit, chat_system, waiting, last_movement_algorithm as lma
+from utils.logic import *
 from network import *
 import sys
 import os
@@ -19,22 +19,22 @@ class Stages:
     def __init__(self):
         self.win = pygame.display.set_mode((700,700))
         pygame.display.set_caption("Thortion Chess")
-        pygame.display.set_icon(pygame.image.load("icon.png"))
-        self.board = pygame.transform.scale(pygame.image.load("board.png"),self.win.get_size())
-        self.frameChat = self.frameCoord = pygame.transform.scale(pygame.image.load("frameCoord.png"),(94, 500))
-        self.mouse_surf = pygame.transform.scale(pygame.image.load("mouse_indication.png"), (60,60))
+        pygame.display.set_icon(pygame.image.load("imgs/GUI/icon.png"))
+        self.board = pygame.transform.scale(pygame.image.load("imgs/GUI/board.png"),self.win.get_size())
+        self.frameChat = self.frameCoord = pygame.transform.scale(pygame.image.load("imgs/GUI/frameCoord.png"),(94, 500))
+        self.mouse_surf = pygame.transform.scale(pygame.image.load("imgs/GUI/mouse_indication.png"), (60,60))
         
         self.t0 = 0
         self.time_chose = 10 * 60  #time in seconds
-        self.pause_img = pygame.image.load("pause.png").convert_alpha()
+        self.pause_img = pygame.image.load("imgs/GUI/pause.png").convert_alpha()
         self.pause_img.set_colorkey([0] * 3)
-        self.chatIcon = pygame.image.load("chatIcon.png").convert_alpha()
+        self.chatIcon = pygame.image.load("imgs/GUI/chatIcon.png").convert_alpha()
         #self.chatIcon.set_colorkey(pygame.Color("#ff0000"))
-        self.littleLabel = pygame.image.load("littleLabel.png")
+        self.littleLabel = pygame.image.load("imgs/GUI/littleLabel.png")
         self.littleLabel.set_colorkey([0] * 3)
         self.info = 0
         
-        self.menu_imgs = [pygame.image.load(name).convert_alpha() for name in glob.glob("menu*.png")]
+        self.menu_imgs = [pygame.image.load(name).convert_alpha() for name in glob.glob("imgs/GUI/menu*.png")]
         for i, menu in enumerate(self.menu_imgs):
             self.menu_imgs[i].set_colorkey([0] * 3)
         self.menu = 0
@@ -49,7 +49,7 @@ class Stages:
         
     def setup(self):
         # The initialization of the chess
-        pieces = [pygame.transform.scale(pygame.image.load(name), (54,54)) for name in glob.glob("p*.png")]
+        pieces = [pygame.transform.scale(pygame.image.load(name), (54,54)) for name in glob.glob("imgs/pieces/p*.png")]
         self.pieces = get_pieces(pieces)
         self.positions = get_positions()
 
@@ -57,7 +57,7 @@ class Stages:
         order = ["rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"]
         self.coords_ingame = []
         letters = string.ascii_lowercase
-        self.font = Font("small_font.png", 2)
+        self.font = Font("imgs/GUI/small_font.png", 2)
         #white
         for i in range(8):
             self.white_pieces.append(Piece(order[i],letters[i] + "1", self.positions[letters[i] + "1"], self.pieces[order[i]], "white"))
@@ -79,8 +79,8 @@ class Stages:
     def choose_option(self):
         self.setup()
         clock = pygame.time.Clock()
-        bg = pygame.transform.scale(pygame.image.load("bg.png"),self.win.get_size())
-        label = pygame.image.load("label.png")
+        bg = pygame.transform.scale(pygame.image.load("imgs/GUI/bg.png"),self.win.get_size())
+        label = pygame.image.load("imgs/GUI/label.png")
         label.set_colorkey((0,) * 3)
         label_size = label.get_size()
         online_label = offline_label = label 
@@ -137,11 +137,14 @@ class Stages:
             
                 p_img.set_colorkey([0] * 3)
                 p_img = swap_color(p_img, "#323e4f", "#ff0000")
-                p_img = swap_color(p_img, "#3b495c", "#ff8400")
-                if name == "king": p_img = swap_color(p_img, "#3b495c", "#ff0100")
+                p_img = swap_color(p_img, "#323e4f", "#ff0001")
+                p_img = swap_color(p_img, "#323e4f", "#ff0002")
                 pos = (x, 700//2 + 260)
                 blit(self.win, p_img, pos)
-                self.font.rendered_text(name, self.win, (pos[0] + 10, pos[1] + 60))
+                if name in ["king", "rook"]:
+                    self.font.rendered_text(name, self.win, (pos[0] + 15, pos[1] + 60))
+                else: 
+                    self.font.rendered_text(name, self.win, (pos[0] + 10, pos[1] + 60))
                 x += 120
             
             
@@ -165,8 +168,8 @@ class Stages:
             p = list(self.pieces.values())[n % len(self.pieces.values())]
             p.set_colorkey([0] * 3)
             p = swap_color(p, "#323e4f", "#ff0000")
-            p = swap_color(p, "#3b495c", "#ff8400")
-            p = swap_color(p, "#3b495c", "#ff0100")
+            p = swap_color(p, "#323e4f", "#ff0001")
+            p = swap_color(p, "#323e4f", "#ff0002")
             
             blit(self.win, p, (650, 645))
             self.font.n_times = 2
@@ -447,7 +450,7 @@ class Stages:
         mouseWheelEvent = 0 # The events condition for the mouse wheel
         mouseWheelChatEvent = MWCE = 0
         min_rounds = [1] # White team, Black team
-        writing = False
+        writing = True
 
         all_pieces = set()
         rival_team = None
@@ -517,6 +520,7 @@ class Stages:
                 if m.x + 30 in range(0, self.pause_img.get_size()[0]) and m.y + 30 in range(0, self.pause_img.get_size()[1]):
                     self.pause_img = swap_color(self.pause_img, "#58f0a5", "#3ca370")
                 else: self.pause_img = swap_color(self.pause_img, "#3ca370", "#58f0a5")
+                
                 if m.x + 30 in range(325, 325 + self.menu_imgs[1].get_size()[0]) and m.y + 30 in range(200, 200 + self.menu_imgs[1].get_size()[1]):
                     self.menu_imgs[1] = swap_color(self.menu_imgs[1], "#4e8c8f", "#3d6e70")
                 else: self.menu_imgs[1] = swap_color(self.menu_imgs[1],"#3d6e70","#4e8c8f")
