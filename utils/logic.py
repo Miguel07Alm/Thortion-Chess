@@ -3,8 +3,8 @@ class Piece:
     def __init__(self, name, coord, r0, img, colour, pieces_choice = None):
         self.name = name
         self.img = img
-        self.r0x, self.r0y = r0
-        self.r = Vector2(self.r0x, self.r0y)
+        self.r0 = r0
+        self.r = Vector2(self.r0)
         self.team = colour
         
         self.colors = [[255] * 3, hex_to_rgb("#f6f6f6")] if colour == "white" else [hex_to_rgb("#111111"), hex_to_rgb("#2f2f2f")]
@@ -76,6 +76,9 @@ class Piece:
             self.all_ideal_coords = []
             self.n_movements = 0
             self.img = swap_color(self.img, self.colors[0], king_color)
+            
+        # Animation
+        self.speed = 1.7
     def contour_selected(self):
         self.img = swap_color(self.img, self.c, self.colors[0])
         
@@ -126,6 +129,20 @@ class Piece:
     
         
     def blit_piece(self, win, points = None,positions = None,pieces = None, turns = None, team = None):
+        # Calcular el vector de dirección hacia el objetivo        
+        direction = self.r - self.r0
+
+        # Normalizar el vector de dirección para mantener la velocidad constante
+        if direction.length() != 0:
+            direction.normalize_ip()
+
+        # Mover el objeto hacia el objetivo
+        self.r0 += direction * self.speed
+
+        # Si el objeto está muy cerca del objetivo, detenerlo
+        if (self.r - self.r0).length() < self.speed:
+            self.r0 = self.r
+            
         if self.name == "pawn":
             target_coord = self.last_coord[0] + "1" if self.team == "black" else  self.last_coord[0] + "8"
             # --Algorithm for the pawn skill--
@@ -133,8 +150,7 @@ class Piece:
             if self.last_coord == target_coord and self.team == team:
                 self.pawn_skill = True
                 c = swap_color(self.contour2.copy(), "#148561",self.contour2.copy().get_at((0,0)))
-                rx, ry = self.r
-                win.blit(c,(rx - 2, ry + 1))
+                win.blit(c, self.r0 - Vector2(-2, 1))
                 win.blit(self.choice_pieces[self.index_choice], self.r)
                 
                 self.index_choice -= self.n
@@ -152,9 +168,9 @@ class Piece:
                 pieces.append(Piece(self.name_choice_pieces[self.index_choice], c, positions[c], self.choice_pieces[self.index_choice],Team))
                 turns.append("white" if Team == "black" else "black")
             if not self.pawn_skill:
-                win.blit(self.img, self.r)
+                win.blit(self.img, self.r0)
                 
-        else: win.blit(self.img, self.r)
+        else: win.blit(self.img, self.r0)
     
     def new_coord(self, new_coord,coord_choice,coords_ingame, last_positions = None):
         self.r = new_coord

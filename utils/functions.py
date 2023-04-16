@@ -481,10 +481,11 @@ class Font:
             x += 1
         return letters
     
-    def rendered_text(self,text, render, loc,line_width=0):
+    def rendered_text(self, text, render, loc,line_width=0):
         """ Function which you can render your text without any restriction """
         x_offset = 0
         y_offset = 0
+
         if line_width != 0:
             spaces = []
             x = 0
@@ -508,6 +509,6 @@ class Font:
                 x_offset += self.letter_spacing[self.fontOrder.index(char)] + self.baseSpacing
             elif char == ' ':
                 x_offset += self.space_width + self.baseSpacing
-            else:
-                y_offset += self.lineSpacing + self.line_height
+            elif char == '\n':
+                y_offset += self.line_height
                 x_offset = 0

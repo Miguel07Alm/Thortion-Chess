@@ -5,7 +5,8 @@ from utils.logic import *
 from network import *
 import sys
 import os
-
+from random import choice
+import math
 def resource_path(relative_path):
     try:
     # PyInstaller creates a temp folder and stores path in _MEIPASS
@@ -156,6 +157,98 @@ class Stages:
         n = 0
         t0 = time.time()
         t = time.time()
+        chess_tips = [  "Control the center of the board",
+                        "Develop your pieces before moving the same pawn multiple times",
+                        "Castle early to protect your king and connect your rooks",
+                        "Avoid moving your queen too early in the game",
+                        "Don't bring out your knights or bishops too early, where they can be attacked",
+                        "Make pawn moves to control space in the center and restrict your opponent's pieces",
+                        "Try to keep your pieces coordinated and working together",
+                        "Be aware of potential knight forks",
+                        "Pay attention to pawn structure and pawn breaks",
+                        "Look for pins and skewers",
+                        "Avoid moving the same piece multiple times in the opening",
+                        "Don't neglect your development in favor of just attacking",
+                        "Understand the value of each piece",
+                        "Don't sacrifice without a clear plan or significant advantage",
+                        "Keep an eye on your opponent's plans and threats",
+                        "Don't hang pieces (leave them undefended and open to capture)",
+                        "Try to keep your king safe by avoiding weak pawn structures",
+                        "Use your pawns to control key squares and create space for your pieces",
+                        "Be aware of potential discovered attacks",
+                        "Consider the value of each move and make a plan",
+                        "Think ahead and consider potential pawn structures",
+                        "Don't trade away your pieces for no reason",
+                        "Try to maintain some control over the center, even if you don't occupy it",
+                        "Don't be afraid to sacrifice material for a better position",
+                        "Be aware of potential trapped pieces",
+                        "Don't ignore your opponent's threats or potential counter-attacks",
+                        "Try to keep your pieces active and mobile",
+                        "Consider the endgame and work to improve your pieces' positions",
+                        "Keep an eye on the clock and manage your time well",
+                        "Be patient and don't rush into bad moves",
+                        "Try to maintain some flexibility in your position",
+                        "Avoid moving your queen too many times in the opening",
+                        "Don't open up your king to attack without a good reason",
+                        "Try to control key diagonals with your bishops",
+                        "Be aware of potential double attacks",
+                        "Don't neglect your pawn structure",
+                        "Be careful when moving pawns in front of your king",
+                        "Try to put pressure on your opponent's weak points",
+                        "Don't make moves that weaken your own pawn structure",
+                        "Be aware of potential discovered checks",
+                        "Don't make moves that allow your opponent to gain control of the center",
+                        "Try to anticipate your opponent's responses and have a plan in mind",
+                        "Be prepared to adapt your plan if your opponent throws you off course",
+                        "Avoid moving your king too much in the opening",
+                        "Try to avoid doubling your pawns",
+                        "Don't be afraid to exchange pieces to simplify the position",
+                        "Be aware of potential knight forks",
+                        "Don't overlook small tactics or simple threats",
+                        "Try to make moves that accomplish more than one goal",
+                        "Be patient and don't get discouraged if your plan doesn't work out",
+                        "Avoid making moves that trap your own pieces",
+                        "Be aware of potential discovered attacks",
+                        "Don't neglect your opponent's pieces",
+                        "Try to keep some tension in the position to keep your opponent guessing",
+                        "Don't be overly aggressive or careless with your pieces",
+                        "Be prepared to sacrifice material if it leads to a strong attack",
+                        "Try to keep your pieces defended and protected",
+                        "Don't neglect the endgame or assume it will be a draw",
+                        "Control the center of the board",
+                        "Develop your pieces before moving the same pawn multiple times",
+                        "Castle early to protect your king",
+                        "Connect your rooks by moving your king to safety",
+                        "Avoid moving your queen too early",
+                        "Knights are more effective when placed near the center of the board",
+                        "Don't neglect your minor pieces",
+                        "Think ahead and anticipate your opponent's moves",
+                        "Use pins, forks, and skewers to your advantage",
+                        "Try to control open files with your rooks",
+                        "Don't forget to protect your pieces",
+                        "Avoid making aimless pawn moves",
+                        "Watch out for potential traps and tactics",
+                        "Consider the value of each piece when making exchanges",
+                        "Look for ways to create pawn breaks to open up the position",
+                        "Use tempo to gain an advantage by forcing your opponent to make unhelpful moves",
+                        "Be aware of common mating patterns",
+                        "Don't move the same piece multiple times without a good reason",
+                        "Don't bring your queen out too early and expose it to attack",
+                        "Don't move your pawns in front of your castled king",
+                        "Try to maintain control of key squares on the board",
+                        "Always consider the possibility of a counter-attack from your opponent",
+                        "Be cautious with your king in the endgame",
+                        "Don't allow your pieces to become overloaded with too many defensive responsibilities",
+                        "Don't become too attached to a particular plan and be flexible to adjust as needed",
+                        "Study classic games and famous chess players to improve your understanding of the game",
+                        "Practice analyzing positions without moving the pieces",
+                        "Always be aware of pawn structure and how it affects the position",
+                        "Develop a consistent opening repertoire to become more comfortable in the early game",
+                        "Be patient and don't rush to make moves without careful consideration"
+                      ]
+        tip = choice(chess_tips)
+        length_tip = len(tip)
+        formatted_tip = tip
         while True:
             blit(self.win, self.board, (0,0))
             clock.tick(60)
@@ -165,6 +258,14 @@ class Stages:
                 t = time.time()
             self.font.n_times = 5
             self.font.rendered_text("loading" + "." * (n % 4), self.win, (0, 645))
+            self.font.n_times = 3
+            
+            if length_tip >= 56:
+                n_spaces = math.ceil(length_tip / 56)
+                formatted_tip = "\n".join(tip[56 * i: 56 * (i + 1)] for i in range(n_spaces))
+                
+            self.font.rendered_text(formatted_tip, self.win, (5, 5))
+
             p = list(self.pieces.values())[n % len(self.pieces.values())]
             p.set_colorkey([0] * 3)
             p = swap_color(p, "#323e4f", "#ff0000")
